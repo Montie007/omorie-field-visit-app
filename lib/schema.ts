@@ -13,6 +13,8 @@ export const VisitExtractionSchema = z.object({
   follow_up_needed: z.boolean(),
   follow_up_date: z.string(),
   follow_up_action: z.string(),
+  email_account: z.string(),
+  phone_number: z.string(),
   summary: z.string()
 });
 
