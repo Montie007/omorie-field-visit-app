@@ -31,6 +31,18 @@ function cell(value: unknown): string {
   return String(value);
 }
 
+function chooseFollowUpChannel(result: VisitExtraction): string {
+  const action = result.follow_up_action.toLowerCase();
+
+  const hasEmail = Boolean(result.email_account?.trim());
+  const hasPhone = Boolean(result.phone_number?.trim());
+  const mentionsPhone = /\b(call|text|phone|sms)\b/i.test(action);
+
+  if (hasEmail && hasPhone) return "Email + Phone";
+  if (hasPhone || mentionsPhone) return "Phone";
+  return "Email";
+}
+
 async function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: requiredEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
@@ -66,9 +78,13 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
           "You extract structured sales visit information for Omorie Matcha.",
           "Return only the required structured fields.",
           "Use empty strings or empty arrays where information is missing.",
+          "Do not invent missing information.",
           "interest_level must be Low, Medium, High, or Unknown.",
           "Use US state abbreviations when state is clear.",
           "follow_up_date must be ISO YYYY-MM-DD if clear; otherwise empty string.",
+          "email_account must contain only an email address explicitly stated in the note. If no email is stated, return an empty string.",
+          "phone_number must contain only a phone number explicitly stated in the note. If no phone number is stated, return an empty string.",
+          "If the note says to call, text, or phone someone, reflect that in follow_up_action.",
           `Today's date is ${today}. Resolve relative dates like next Tuesday from this date.`
         ].join("\n")
       },
@@ -139,7 +155,9 @@ export async function POST(req: Request) {
         cell(result.follow_up_date),
         cell(result.cafe_name),
         cell(result.contact_name),
-        "Email",
+        chooseFollowUpChannel(result),
+        cell(result.email_account),
+        cell(result.phone_number),
         cell(result.follow_up_action),
         "",
         "NEW"
