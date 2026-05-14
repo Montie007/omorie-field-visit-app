@@ -8,7 +8,6 @@ export const runtime = "nodejs";
 
 type Body = {
   rep?: string;
-  password?: string;
   cafeName?: string;
   city?: string;
   note?: string;
