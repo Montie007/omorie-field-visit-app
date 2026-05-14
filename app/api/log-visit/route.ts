@@ -43,6 +43,116 @@ function chooseFollowUpChannel(result: VisitExtraction): string {
   return "Email";
 }
 
+function normalizeEmail(raw: string): string {
+  let text = raw.toLowerCase();
+
+  text = text
+    .replace(/\s+at\s+/g, "@")
+    .replace(/\s+dot\s+/g, ".")
+    .replace(/\s+period\s+/g, ".")
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9@._+-]/g, "");
+
+  const commonDomains: Record<string, string> = {
+    "@gmail": "@gmail.com",
+    "@outlook": "@outlook.com",
+    "@hotmail": "@hotmail.com",
+    "@yahoo": "@yahoo.com",
+    "@icloud": "@icloud.com"
+  };
+
+  for (const [shortDomain, fullDomain] of Object.entries(commonDomains)) {
+    if (text.endsWith(shortDomain)) {
+      text = text.slice(0, -shortDomain.length) + fullDomain;
+    }
+  }
+
+  const match = text.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/);
+  return match ? match[0] : "";
+}
+
+function extractEmailFromRawNote(note: string): string {
+  const patterns = [
+    /(?:his|her|their|the|contact|best|main)?\s*email(?: address)?\s*(?:is|was|:)?\s+(.{3,80})/i,
+    /(?:email|e-mail)\s*(?:is|was|:)?\s+(.{3,80})/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = note.match(pattern);
+    if (!match?.[1]) continue;
+
+    const candidate = match[1].split(/[.,;]|\b(phone|number|follow|call|text|spoke|liked|interested)\b/i)[0];
+    const normalized = normalizeEmail(candidate);
+
+    if (normalized) return normalized;
+  }
+
+  const directEmail = note.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return directEmail ? directEmail[0].toLowerCase() : "";
+}
+
+function wordToDigit(word: string): string {
+  const map: Record<string, string> = {
+    zero: "0",
+    oh: "0",
+    o: "0",
+    one: "1",
+    two: "2",
+    three: "3",
+    four: "4",
+    five: "5",
+    six: "6",
+    seven: "7",
+    eight: "8",
+    nine: "9"
+  };
+
+  return map[word.toLowerCase()] ?? word;
+}
+
+function normalizePhone(raw: string): string {
+  let text = raw.toLowerCase();
+
+  text = text.replace(
+    /\b(zero|oh|o|one|two|three|four|five|six|seven|eight|nine)\b/g,
+    word => wordToDigit(word)
+  );
+
+  const digits = text.replace(/[^\d+]/g, "");
+
+  if (digits.length < 7) return "";
+
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+
+  return digits;
+}
+
+function extractPhoneFromRawNote(note: string): string {
+  const patterns = [
+    /(?:his|her|their|the|contact|best|main)?\s*(?:phone|phone number|number|mobile|cell)\s*(?:is|was|:)?\s+(.{3,60})/i,
+    /(?:call|text)\s+(?:him|her|them)?\s*(?:at)?\s+(.{3,60})/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = note.match(pattern);
+    if (!match?.[1]) continue;
+
+    const candidate = match[1].split(/[.,;]|\b(email|follow|spoke|liked|interested)\b/i)[0];
+    const normalized = normalizePhone(candidate);
+
+    if (normalized) return normalized;
+  }
+
+  const directPhone = note.match(/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+  return directPhone ? normalizePhone(directPhone[0]) : "";
+}
+
 async function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: requiredEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
@@ -109,7 +219,14 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
     city: parsed.city || input.city || ""
   });
 
-  return cleaned;
+  const fallbackEmail = extractEmailFromRawNote(input.note);
+  const fallbackPhone = extractPhoneFromRawNote(input.note);
+
+  return {
+    ...cleaned,
+    email_account: fallbackEmail || cleaned.email_account,
+    phone_number: fallbackPhone || cleaned.phone_number
+  };
 }
 
 export async function POST(req: Request) {
