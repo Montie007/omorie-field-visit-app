@@ -15,12 +15,13 @@ type Result = {
   follow_up_needed: boolean;
   follow_up_date: string;
   follow_up_action: string;
+  email_account: string;
+  phone_number: string;
   summary: string;
 };
 
 export default function Home() {
   const [rep, setRep] = useState("Landon");
-  const [password, setPassword] = useState("");
   const [cafeName, setCafeName] = useState("");
   const [city, setCity] = useState("");
   const [note, setNote] = useState("");
@@ -43,7 +44,7 @@ export default function Home() {
       const res = await fetch("/api/log-visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rep, password, cafeName, city, note })
+        body: JSON.stringify({ rep, cafeName, city, note })
       });
 
       const data = await res.json();
@@ -67,16 +68,8 @@ export default function Home() {
         <p className="sub">Dictate the note with the phone keyboard, then submit.</p>
 
         <form onSubmit={submitVisit}>
-          <div className="row">
-            <div>
-              <label htmlFor="rep">Rep</label>
-              <input id="rep" value={rep} onChange={(e) => setRep(e.target.value)} />
-            </div>
-            <div>
-              <label htmlFor="password">Password</label>
-              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-          </div>
+          <label htmlFor="rep">Rep</label>
+          <input id="rep" value={rep} onChange={(e) => setRep(e.target.value)} />
 
           <label htmlFor="cafeName">Cafe Name optional</label>
           <input id="cafeName" value={cafeName} onChange={(e) => setCafeName(e.target.value)} placeholder="e.g. Luna Coffee" />
