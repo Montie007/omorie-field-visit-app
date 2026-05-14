@@ -232,10 +232,6 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Body;
 
-    if (process.env.APP_PASSWORD && body.password !== process.env.APP_PASSWORD) {
-      return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
-    }
-
     const note = body.note?.trim() || "";
     if (!note) return NextResponse.json({ error: "Visit note is required." }, { status: 400 });
 
