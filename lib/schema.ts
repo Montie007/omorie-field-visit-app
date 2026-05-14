@@ -10,6 +10,7 @@ export const VisitExtractionSchema = z.object({
   products_liked: z.array(z.string()),
   objections: z.array(z.string()),
   current_supplier: z.string(),
+  volume: z.string(),
   follow_up_needed: z.boolean(),
   follow_up_date: z.string(),
   follow_up_action: z.string(),
