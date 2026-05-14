@@ -193,6 +193,7 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
           "follow_up_date must be ISO YYYY-MM-DD if clear; otherwise empty string.",
           "email_account must contain only an email address explicitly stated in the note. If no email is stated, return an empty string.",
           "phone_number must contain only a phone number explicitly stated in the note. If no phone number is stated, return an empty string.",
+          "volume should capture how much matcha/tea/product the cafe uses and the time period if stated. Examples: '2 lb per week', '5 kg per month', '10 bags', 'weekly'. If no volume or usage frequency is stated, return an empty string.",
           "If the note says to call, text, or phone someone, reflect that in follow_up_action.",
           `Today's date is ${today}. Resolve relative dates like next Tuesday from this date.`
         ].join("\n")
