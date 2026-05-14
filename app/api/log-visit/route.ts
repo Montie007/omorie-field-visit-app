@@ -243,23 +243,25 @@ export async function POST(req: Request) {
     const result = await extractVisit({ note, cafeName, city });
 
     await appendRow("VISIT_LOG", [
-      timestamp,
-      rep,
-      note,
-      cell(result.cafe_name),
-      cell(result.city),
-      cell(result.state),
-      cell(result.contact_name),
-      cell(result.contact_role),
-      cell(result.interest_level),
-      cell(result.products_liked),
-      cell(result.objections),
-      cell(result.current_supplier),
-      cell(result.follow_up_needed),
-      cell(result.follow_up_date),
-      cell(result.follow_up_action),
-      cell(result.summary)
-    ]);
+  timestamp,
+  rep,
+  note,
+  cell(result.cafe_name),
+  cell(result.city),
+  cell(result.state),
+  cell(result.contact_name),
+  cell(result.contact_role),
+  cell(result.interest_level),
+  cell(result.products_liked),
+  cell(result.objections),
+  cell(result.current_supplier),
+  cell(result.email_account),
+  cell(result.phone_number),
+  cell(result.follow_up_needed),
+  cell(result.follow_up_date),
+  cell(result.follow_up_action),
+  cell(result.summary)
+]);
 
     if (result.follow_up_needed) {
       await appendRow("FOLLOW_UPS", [
