@@ -215,10 +215,11 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
   if (!parsed) throw new Error("OpenAI returned no structured result.");
 
   const cleaned = VisitExtractionSchema.parse({
-    ...parsed,
-    cafe_name: parsed.cafe_name || input.cafeName || "",
-    city: parsed.city || input.city || ""
-  });
+  ...parsed,
+  cafe_name: parsed.cafe_name || input.cafeName || "",
+  location: parsed.location || "",
+  city: parsed.city || input.city || ""
+});
 
   const fallbackEmail = extractEmailFromRawNote(input.note);
   const fallbackPhone = extractPhoneFromRawNote(input.note);
