@@ -256,6 +256,7 @@ export async function POST(req: Request) {
   cell(result.products_liked),
   cell(result.objections),
   cell(result.current_supplier),
+  cell(result.volume),    
   cell(result.email_account),
   cell(result.phone_number),
   cell(result.follow_up_needed),
