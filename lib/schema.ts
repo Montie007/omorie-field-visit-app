@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const VisitExtractionSchema = z.object({
   cafe_name: z.string(),
+  location: z.string(),
   city: z.string(),
-  state: z.string(),
   contact_name: z.string(),
   contact_role: z.string(),
   interest_level: z.enum(["Low", "Medium", "High", "Unknown"]),
