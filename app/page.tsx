@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 type Result = {
+  return_visit: "New" | "Return";
   cafe_name: string;
   city: string;
   state: string;
