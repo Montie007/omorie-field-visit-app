@@ -24,6 +24,7 @@ type Result = {
 export default function Home() {
   const [rep, setRep] = useState("Landon");
   const [cafeName, setCafeName] = useState("");
+  const [returnVisit, setReturnVisit] = useState<"New" | "Return">("New");
   const [city, setCity] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,7 +46,7 @@ export default function Home() {
       const res = await fetch("/api/log-visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rep, cafeName, city, note })
+        body: JSON.stringify({ rep, cafeName, returnVisit, city, note })
       });
 
       const data = await res.json();
@@ -72,10 +73,19 @@ export default function Home() {
           <label htmlFor="rep">Rep</label>
           <input id="rep" value={rep} onChange={(e) => setRep(e.target.value)} />
 
-          <label htmlFor="cafeName">Cafe Name optional</label>
-          <input id="cafeName" value={cafeName} onChange={(e) => setCafeName(e.target.value)} placeholder="e.g. Luna Coffee" />
+         <label htmlFor="cafeName">Cafe Name optional</label>
+        <input id="cafeName" value={cafeName} onChange={(e) => setCafeName(e.target.value)} placeholder="e.g. Luna Coffee" />
 
-          <label htmlFor="city">City optional</label>
+        <label htmlFor="returnVisit">Return Visit</label>
+        <select
+        id="returnVisit"
+        value={returnVisit}
+        onChange={(e) => setReturnVisit(e.target.value as "New" | "Return")}  >
+  <option value="New">New</option>
+  <option value="Return">Return</option>
+</select>
+
+<label htmlFor="city">City optional</label>
           <input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Austin" />
 
           <label htmlFor="note">Visit Note</label>
