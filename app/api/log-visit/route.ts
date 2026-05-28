@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 type Body = {
   rep?: string;
   cafeName?: string;
+  returnVisit?: "New" | "Return";
   city?: string;
   note?: string;
 };
@@ -173,7 +174,12 @@ async function appendRow(tabName: string, row: string[]) {
   });
 }
 
-async function extractVisit(input: { note: string; cafeName: string; city: string }): Promise<VisitExtraction> {
+async function extractVisit(input: {
+  note: string;
+  cafeName: string;
+  returnVisit: "New" | "Return";
+  city: string;
+}): Promise<VisitExtraction> {
   const openai = new OpenAI({ apiKey: requiredEnv("OPENAI_API_KEY") });
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
   const today = new Date().toISOString().slice(0, 10);
@@ -189,6 +195,7 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
           "Use empty strings or empty arrays where information is missing.",
           "Do not invent missing information.",
           "interest_level must be Low, Medium, High, or Unknown.",
+          "return_visit must be New or Return. Use Return if the note says this is a return visit, follow-up visit, second visit, visited again, came back, stopped by again, already visited before, or similar. Otherwise use New.",
           "location should capture the specific location stated in the note, such as street, neighbourhood, district, area, or exact address. Examples: '8th Street', 'Brooklyn', 'downtown Phoenix', '123 Main Street'.",
           "city should capture the actual city only, such as New York, Phoenix, Los Angeles, Austin, or Salt Lake City. Do not put neighbourhoods or streets in city.",
           "follow_up_date must be ISO YYYY-MM-DD if clear; otherwise empty string.",
@@ -201,11 +208,12 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
       },
       {
         role: "user",
-        content: JSON.stringify({
-          optional_cafe_name: input.cafeName,
-          optional_city: input.city,
-          visit_note: input.note
-        })
+       content: JSON.stringify({
+      selected_return_visit: input.returnVisit,
+      optional_cafe_name: input.cafeName,
+      optional_city: input.city,
+      visit_note: input.note
+     })
       }
     ],
     response_format: zodResponseFormat(VisitExtractionSchema, "visit_extraction")
@@ -216,6 +224,10 @@ async function extractVisit(input: { note: string; cafeName: string; city: strin
 
   const cleaned = VisitExtractionSchema.parse({
   ...parsed,
+  return_visit:
+    input.returnVisit === "Return" || parsed.return_visit === "Return"
+      ? "Return"
+      : "New",
   cafe_name: parsed.cafe_name || input.cafeName || "",
   location: parsed.location || "",
   city: parsed.city || input.city || ""
@@ -240,15 +252,17 @@ export async function POST(req: Request) {
 
     const rep = body.rep?.trim() || "Landon";
     const cafeName = body.cafeName?.trim() || "";
+    const returnVisit = body.returnVisit === "Return" ? "Return" : "New";
     const city = body.city?.trim() || "";
     const timestamp = new Date().toISOString();
 
-    const result = await extractVisit({ note, cafeName, city });
+    const result = await extractVisit({ note, cafeName, returnVisit, city });
 
-    await appendRow("VISIT_LOG", [
+   await appendRow("VISIT_LOG", [
   timestamp,
   rep,
   note,
+  cell(result.return_visit),
   cell(result.cafe_name),
   cell(result.location),
   cell(result.city),
