@@ -14,6 +14,10 @@ type Body = {
   note?: string;
 };
 
+type VisitResult = VisitExtraction & {
+  follow_up_status: "NEW" | "REPEAT";
+};
+
 function requiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing env var: ${name}`);
@@ -25,22 +29,8 @@ function cleanPrivateKey(key: string): string {
 }
 
 function cell(value: unknown): string {
-  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
-  if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
   if (value === null || value === undefined) return "";
   return String(value);
-}
-
-function chooseFollowUpChannel(result: VisitExtraction): string {
-  const action = result.follow_up_action.toLowerCase();
-
-  const hasEmail = Boolean(result.email_account?.trim());
-  const hasPhone = Boolean(result.phone_number?.trim());
-  const mentionsPhone = /\b(call|text|phone|sms)\b/i.test(action);
-
-  if (hasEmail && hasPhone) return "Email + Phone";
-  if (hasPhone || mentionsPhone) return "Phone";
-  return "Email";
 }
 
 function normalizeEmail(raw: string): string {
@@ -165,6 +155,7 @@ async function getSheetsClient() {
 
 async function appendRow(tabName: string, row: string[]) {
   const sheets = await getSheetsClient();
+
   await sheets.spreadsheets.values.append({
     spreadsheetId: requiredEnv("GOOGLE_SHEET_ID"),
     range: `${tabName}!A:Z`,
@@ -181,8 +172,7 @@ async function extractVisit(input: {
   city: string;
 }): Promise<VisitExtraction> {
   const openai = new OpenAI({ apiKey: requiredEnv("OPENAI_API_KEY") });
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-  const today = new Date().toISOString().slice(0, 10);
+  const model = process.env.OPENAI_MODEL || "gpt-5-nano";
 
   const completion = await openai.chat.completions.parse({
     model,
@@ -192,28 +182,26 @@ async function extractVisit(input: {
         content: [
           "You extract structured sales visit information for Omorie Matcha.",
           "Return only the required structured fields.",
-          "Use empty strings or empty arrays where information is missing.",
+          "Use empty strings where information is missing.",
           "Do not invent missing information.",
+          "return_visit must be New or Return.",
+          "Use Return if the note says this is a return visit, follow-up visit, second visit, visited again, came back, stopped by again, already visited before, or similar.",
+          "Otherwise use New.",
           "interest_level must be Low, Medium, High, or Unknown.",
-          "return_visit must be New or Return. Use Return if the note says this is a return visit, follow-up visit, second visit, visited again, came back, stopped by again, already visited before, or similar. Otherwise use New.",
-          "location should capture the specific location stated in the note, such as street, neighbourhood, district, area, or exact address. Examples: '8th Street', 'Brooklyn', 'downtown Phoenix', '123 Main Street'.",
+          "location should capture the specific location stated in the note, such as street, neighbourhood, district, area, or exact address.",
           "city should capture the actual city only, such as New York, Phoenix, Los Angeles, Austin, or Salt Lake City. Do not put neighbourhoods or streets in city.",
-          "follow_up_date must be ISO YYYY-MM-DD if clear; otherwise empty string.",
           "email_account must contain only an email address explicitly stated in the note. If no email is stated, return an empty string.",
-          "phone_number must contain only a phone number explicitly stated in the note. If no phone number is stated, return an empty string.",
-          "volume should capture how much matcha/tea/product the cafe uses and the time period if stated. Examples: '2 lb per week', '5 kg per month', '10 bags', 'weekly'. If no volume or usage frequency is stated, return an empty string.",
-          "If the note says to call, text, or phone someone, reflect that in follow_up_action.",
-          `Today's date is ${today}. Resolve relative dates like next Tuesday from this date.`
+          "phone_number must contain only a phone number explicitly stated in the note. If no phone number is stated, return an empty string."
         ].join("\n")
       },
       {
         role: "user",
-       content: JSON.stringify({
-      selected_return_visit: input.returnVisit,
-      optional_cafe_name: input.cafeName,
-      optional_city: input.city,
-      visit_note: input.note
-     })
+        content: JSON.stringify({
+          selected_return_visit: input.returnVisit,
+          optional_cafe_name: input.cafeName,
+          optional_city: input.city,
+          visit_note: input.note
+        })
       }
     ],
     response_format: zodResponseFormat(VisitExtractionSchema, "visit_extraction")
@@ -223,15 +211,15 @@ async function extractVisit(input: {
   if (!parsed) throw new Error("OpenAI returned no structured result.");
 
   const cleaned = VisitExtractionSchema.parse({
-  ...parsed,
-  return_visit:
-    input.returnVisit === "Return" || parsed.return_visit === "Return"
-      ? "Return"
-      : "New",
-  cafe_name: parsed.cafe_name || input.cafeName || "",
-  location: parsed.location || "",
-  city: parsed.city || input.city || ""
-});
+    ...parsed,
+    return_visit:
+      input.returnVisit === "Return" || parsed.return_visit === "Return"
+        ? "Return"
+        : "New",
+    cafe_name: input.cafeName || parsed.cafe_name || "",
+    location: parsed.location || "",
+    city: input.city || parsed.city || ""
+  });
 
   const fallbackEmail = extractEmailFromRawNote(input.note);
   const fallbackPhone = extractPhoneFromRawNote(input.note);
@@ -248,7 +236,9 @@ export async function POST(req: Request) {
     const body = (await req.json()) as Body;
 
     const note = body.note?.trim() || "";
-    if (!note) return NextResponse.json({ error: "Visit note is required." }, { status: 400 });
+    if (!note) {
+      return NextResponse.json({ error: "Visit note is required." }, { status: 400 });
+    }
 
     const rep = body.rep?.trim() || "Landon";
     const cafeName = body.cafeName?.trim() || "";
@@ -256,45 +246,28 @@ export async function POST(req: Request) {
     const city = body.city?.trim() || "";
     const timestamp = new Date().toISOString();
 
-    const result = await extractVisit({ note, cafeName, returnVisit, city });
+    const extraction = await extractVisit({ note, cafeName, returnVisit, city });
 
-   await appendRow("VISIT_LOG", [
-  timestamp,
-  rep,
-  note,
-  cell(result.return_visit),
-  cell(result.cafe_name),
-  cell(result.location),
-  cell(result.city),
-  cell(result.contact_name),
-  cell(result.contact_role),
-  cell(result.interest_level),
-  cell(result.products_liked),
-  cell(result.objections),
-  cell(result.current_supplier),
-  cell(result.volume),    
-  cell(result.email_account),
-  cell(result.phone_number),
-  cell(result.follow_up_needed),
-  cell(result.follow_up_date),
-  cell(result.follow_up_action),
-  cell(result.summary)
-]);
+    const result: VisitResult = {
+      ...extraction,
+      follow_up_status: extraction.return_visit === "Return" ? "REPEAT" : "NEW"
+    };
 
-    if (result.follow_up_needed) {
-      await appendRow("FOLLOW_UPS", [
-        timestamp,
-        cell(result.follow_up_date),
-        cell(result.cafe_name),
-        cell(result.contact_name),
-        chooseFollowUpChannel(result),
-        cell(result.email_account),
-        cell(result.phone_number),
-        cell(result.follow_up_action),
-        "",
-        "NEW"
-      ]);
-    }
+    await appendRow("VISIT_LOG", [
+      timestamp,
+      rep,
+      note,
+      cell(result.return_visit),
+      cell(result.cafe_name),
+      cell(result.location),
+      cell(result.city),
+      cell(result.contact_name),
+      cell(result.contact_role),
+      cell(result.interest_level),
+      cell(result.email_account),
+      cell(result.phone_number),
+      cell(result.follow_up_status)
+    ]);
 
     return NextResponse.json({ ok: true, result });
   } catch (err) {
