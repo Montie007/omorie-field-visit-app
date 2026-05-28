@@ -5,19 +5,14 @@ import { useState } from "react";
 type Result = {
   return_visit: "New" | "Return";
   cafe_name: string;
+  location: string;
   city: string;
   contact_name: string;
   contact_role: string;
   interest_level: "Low" | "Medium" | "High" | "Unknown";
-  products_liked: string[];
-  objections: string[];
-  current_supplier: string;
-  follow_up_needed: boolean;
-  follow_up_date: string;
-  follow_up_action: string;
   email_account: string;
   phone_number: string;
-  summary: string;
+  follow_up_status: "NEW" | "REPEAT";
 };
 
 export default function Home() {
@@ -53,6 +48,7 @@ export default function Home() {
 
       setResult(data.result);
       setCafeName("");
+      setReturnVisit("New");
       setCity("");
       setNote("");
     } catch (err) {
@@ -72,23 +68,39 @@ export default function Home() {
           <label htmlFor="rep">Rep</label>
           <input id="rep" value={rep} onChange={(e) => setRep(e.target.value)} />
 
-         <label htmlFor="cafeName">Cafe Name optional</label>
-        <input id="cafeName" value={cafeName} onChange={(e) => setCafeName(e.target.value)} placeholder="e.g. Luna Coffee" />
+          <label htmlFor="cafeName">Cafe Name optional</label>
+          <input
+            id="cafeName"
+            value={cafeName}
+            onChange={(e) => setCafeName(e.target.value)}
+            placeholder="e.g. Luna Coffee"
+          />
 
-        <label htmlFor="returnVisit">Return Visit</label>
-        <select
-        id="returnVisit"
-        value={returnVisit}
-        onChange={(e) => setReturnVisit(e.target.value as "New" | "Return")}  >
-  <option value="New">New</option>
-  <option value="Return">Return</option>
-</select>
+          <label htmlFor="returnVisit">Return Visit</label>
+          <select
+            id="returnVisit"
+            value={returnVisit}
+            onChange={(e) => setReturnVisit(e.target.value as "New" | "Return")}
+          >
+            <option value="New">New</option>
+            <option value="Return">Return</option>
+          </select>
 
-<label htmlFor="city">City optional</label>
-          <input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Austin" />
+          <label htmlFor="city">City optional</label>
+          <input
+            id="city"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="e.g. Austin"
+          />
 
           <label htmlFor="note">Visit Note</label>
-          <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Dictate here after the visit..." />
+          <textarea
+            id="note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Dictate here after the visit..."
+          />
 
           <button disabled={loading}>{loading ? "Submitting..." : "Submit Visit"}</button>
         </form>
@@ -98,10 +110,13 @@ export default function Home() {
         {result && (
           <div className="message success">
             <div className="summaryTitle">Saved: {result.cafe_name || "Cafe visit"}</div>
-            <div>{result.summary}</div>
             <div className="kv">
+              Return Visit: {result.return_visit}<br />
+              Follow-Up Status: {result.follow_up_status}<br />
               Interest: {result.interest_level}<br />
-              Follow-up: {result.follow_up_needed ? `${result.follow_up_date || "date unclear"} — ${result.follow_up_action}` : "No"}
+              Contact: {result.contact_name || "Not provided"}<br />
+              Email: {result.email_account || "Not provided"}<br />
+              Phone: {result.phone_number || "Not provided"}
             </div>
           </div>
         )}
