@@ -6,7 +6,6 @@ type Result = {
   return_visit: "New" | "Return";
   cafe_name: string;
   city: string;
-  state: string;
   contact_name: string;
   contact_role: string;
   interest_level: "Low" | "Medium" | "High" | "Unknown";
