@@ -158,7 +158,7 @@ async function appendRow(tabName: string, row: string[]) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: requiredEnv("GOOGLE_SHEET_ID"),
-    range: `${tabName}!A:Z`,
+    range: `${tabName}!A:M`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [row] }
