@@ -12,10 +12,11 @@ type Body = {
   returnVisit?: "New" | "Return";
   city?: string;
   note?: string;
+  followUpMethod?: "Generic" | "Personal" | "None";
 };
 
 type VisitResult = VisitExtraction & {
-  follow_up_status: "NEW" | "REPEAT";
+  follow_up_status: "Generic" | "Personal" | "None";
 };
 
 function requiredEnv(name: string): string {
@@ -240,6 +241,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Visit note is required." }, { status: 400 });
     }
 
+    const followUpMethod = body.followUpMethod ?? "Generic";
+    if (!["Generic", "Personal", "None"].includes(followUpMethod)) {
+      return NextResponse.json({ error: "Invalid follow up method." }, { status: 400 });
+    }
+
     const rep = body.rep?.trim() || "Landon";
     const cafeName = body.cafeName?.trim() || "";
     const returnVisit = body.returnVisit === "Return" ? "Return" : "New";
@@ -250,7 +256,7 @@ export async function POST(req: Request) {
 
     const result: VisitResult = {
       ...extraction,
-      follow_up_status: extraction.return_visit === "Return" ? "REPEAT" : "NEW"
+      follow_up_status: followUpMethod
     };
 
     await appendRow("VISIT_LOG", [

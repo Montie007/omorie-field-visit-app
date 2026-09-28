@@ -4,10 +4,9 @@ button, input, textarea, select { font: inherit; }
 .page { min-height: 100vh; display: flex; justify-content: center; padding: 20px 12px; }
 .card { width: 100%; max-width: 520px; background: white; border: 1px solid #dfe5dc; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
 h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
-.sub { margin: 0 0 22px; color: #60705d; line-height: 1.35; }
 label { display: block; font-weight: 650; margin: 16px 0 7px; }
 input, textarea, select { width: 100%; border: 1px solid #ccd6c9; border-radius: 14px; padding: 13px 14px; background: #fbfcfb; outline: none; }
-textarea { min-height: 220px; resize: vertical; line-height: 1.4; }
+textarea { display: block; height: clamp(72px, calc(100svh - 540px), 120px); min-height: 72px; resize: vertical; line-height: 1.4; }
 input:focus, textarea:focus, select:focus { border-color: #6d8f5f; box-shadow: 0 0 0 3px rgba(109,143,95,0.16); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 button { width: 100%; margin-top: 20px; border: none; border-radius: 15px; padding: 15px 18px; background: #233f20; color: white; font-weight: 750; cursor: pointer; }
@@ -18,3 +17,10 @@ button:disabled { opacity: .65; cursor: not-allowed; }
 .summaryTitle { font-weight: 750; margin-bottom: 6px; }
 .kv { margin-top: 10px; color: #40503d; font-size: 14px; }
 @media (max-width: 420px) { .row { grid-template-columns: 1fr; } .card { padding: 18px; border-radius: 18px; } }
+@media (max-height: 700px) {
+  .page { padding: 10px 12px; }
+  .card { padding: 16px 18px; }
+  label { margin-top: 10px; margin-bottom: 5px; }
+  input, select { padding: 10px 14px; }
+  button { margin-top: 14px; padding: 12px 18px; }
+}
