@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Log Cafe Visit",
+  title: "Matcha Mate",
   description: "Omorie field cafe visit logger",
   icons: {
     apple: "/apple-touch-icon.png",

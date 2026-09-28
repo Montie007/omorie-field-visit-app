@@ -19,7 +19,7 @@ export default function Home() {
   const [rep, setRep] = useState("Landon");
   const [cafeName, setCafeName] = useState("");
   const [returnVisit, setReturnVisit] = useState<"New" | "Return">("New");
-  const [city, setCity] = useState("");
+  const [followUpMethod, setFollowUpMethod] = useState("Generic");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +40,7 @@ export default function Home() {
       const res = await fetch("/api/log-visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rep, cafeName, returnVisit, city, note })
+        body: JSON.stringify({ rep, cafeName, returnVisit, note })
       });
 
       const data = await res.json();
@@ -49,7 +49,7 @@ export default function Home() {
       setResult(data.result);
       setCafeName("");
       setReturnVisit("New");
-      setCity("");
+      setFollowUpMethod("Generic");
       setNote("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something failed.");
@@ -61,19 +61,18 @@ export default function Home() {
   return (
     <main className="page">
       <section className="card">
-        <h1>Log Cafe Visit</h1>
-        <p className="sub">Dictate the note with the phone keyboard, then submit.</p>
+        <h1>Matcha Mate</h1>
 
         <form onSubmit={submitVisit}>
           <label htmlFor="rep">Rep</label>
           <input id="rep" value={rep} onChange={(e) => setRep(e.target.value)} />
 
-          <label htmlFor="cafeName">Cafe Name optional</label>
+          <label htmlFor="cafeName">Cafe Name</label>
           <input
             id="cafeName"
             value={cafeName}
             onChange={(e) => setCafeName(e.target.value)}
-            placeholder="e.g. Luna Coffee"
+            placeholder="optional"
           />
 
           <label htmlFor="returnVisit">Return Visit</label>
@@ -86,13 +85,16 @@ export default function Home() {
             <option value="Return">Return</option>
           </select>
 
-          <label htmlFor="city">City optional</label>
-          <input
-            id="city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="e.g. Austin"
-          />
+          <label htmlFor="followUpMethod">Follow Up Method</label>
+          <select
+            id="followUpMethod"
+            value={followUpMethod}
+            onChange={(e) => setFollowUpMethod(e.target.value)}
+          >
+            <option value="Generic">Generic</option>
+            <option value="Personal">Personal</option>
+            <option value="None">None</option>
+          </select>
 
           <label htmlFor="note">Visit Note</label>
           <textarea
