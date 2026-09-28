@@ -12,7 +12,7 @@ type Result = {
   interest_level: "Low" | "Medium" | "High" | "Unknown";
   email_account: string;
   phone_number: string;
-  follow_up_status: "NEW" | "REPEAT";
+  follow_up_status: "Generic" | "Personal" | "None";
 };
 
 export default function Home() {
@@ -40,7 +40,7 @@ export default function Home() {
       const res = await fetch("/api/log-visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rep, cafeName, returnVisit, note })
+        body: JSON.stringify({ rep, cafeName, returnVisit, followUpMethod, note })
       });
 
       const data = await res.json();
