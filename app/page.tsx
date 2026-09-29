@@ -17,7 +17,7 @@ type Result = {
 
 export default function Home() {
   const [rep, setRep] = useState("Landon");
-  const [cafeName, setCafeName] = useState("");
+  const [mainContact, setMainContact] = useState("");
   const [returnVisit, setReturnVisit] = useState<"New" | "Return">("New");
   const [followUpMethod, setFollowUpMethod] = useState("Generic");
   const [note, setNote] = useState("");
@@ -40,14 +40,14 @@ export default function Home() {
       const res = await fetch("/api/log-visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rep, cafeName, returnVisit, followUpMethod, note })
+        body: JSON.stringify({ rep, mainContact, returnVisit, followUpMethod, note })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something failed.");
 
       setResult(data.result);
-      setCafeName("");
+      setMainContact("");
       setReturnVisit("New");
       setFollowUpMethod("Generic");
       setNote("");
@@ -67,11 +67,11 @@ export default function Home() {
           <label htmlFor="rep">Rep</label>
           <input id="rep" value={rep} onChange={(e) => setRep(e.target.value)} />
 
-          <label htmlFor="cafeName">Cafe Name</label>
+          <label htmlFor="mainContact">Main Contact</label>
           <input
-            id="cafeName"
-            value={cafeName}
-            onChange={(e) => setCafeName(e.target.value)}
+            id="mainContact"
+            value={mainContact}
+            onChange={(e) => setMainContact(e.target.value)}
             placeholder="optional"
           />
 

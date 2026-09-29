@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 type Body = {
   rep?: string;
-  cafeName?: string;
+  mainContact?: string;
   returnVisit?: "New" | "Return";
   city?: string;
   note?: string;
@@ -168,7 +168,6 @@ async function appendRow(tabName: string, row: string[]) {
 
 async function extractVisit(input: {
   note: string;
-  cafeName: string;
   returnVisit: "New" | "Return";
   city: string;
 }): Promise<VisitExtraction> {
@@ -199,7 +198,6 @@ async function extractVisit(input: {
         role: "user",
         content: JSON.stringify({
           selected_return_visit: input.returnVisit,
-          optional_cafe_name: input.cafeName,
           optional_city: input.city,
           visit_note: input.note
         })
@@ -217,7 +215,7 @@ async function extractVisit(input: {
       input.returnVisit === "Return" || parsed.return_visit === "Return"
         ? "Return"
         : "New",
-    cafe_name: input.cafeName || parsed.cafe_name || "",
+    cafe_name: parsed.cafe_name || "",
     location: parsed.location || "",
     city: input.city || parsed.city || ""
   });
@@ -247,15 +245,16 @@ export async function POST(req: Request) {
     }
 
     const rep = body.rep?.trim() || "Landon";
-    const cafeName = body.cafeName?.trim() || "";
+    const mainContact = body.mainContact?.trim() || "";
     const returnVisit = body.returnVisit === "Return" ? "Return" : "New";
     const city = body.city?.trim() || "";
     const timestamp = new Date().toISOString();
 
-    const extraction = await extractVisit({ note, cafeName, returnVisit, city });
+    const extraction = await extractVisit({ note, returnVisit, city });
 
     const result: VisitResult = {
       ...extraction,
+      contact_name: mainContact || extraction.contact_name,
       follow_up_status: followUpMethod
     };
 
